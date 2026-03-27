@@ -35,43 +35,25 @@ def _extract_from_pdf(pdf_path):
 
 
 def _check_eligibility(income, doc_issues, income_limit, scheme_id=None, user_policy_path=None):
-    """Run eligibility logic using RAG if policy document is provided by user or saved in scheme vector DB, else fallback."""
+    """Run eligibility logic. Uses direct text extraction for policy context if provided, being memory-efficient for Render."""
     try:
-        from langchain_community.embeddings import HuggingFaceEmbeddings
-        from langchain_community.vectorstores import FAISS
         from llm.groq_client import groq_generate
+        from pypdf import PdfReader
         
-        db_faiss = None
+        policy_context = "No specific policy document provided. Fallback to general rules."
         
         if user_policy_path and os.path.exists(user_policy_path):
-            # Create a temporary vector store from the user-uploaded policy document
-            from langchain_community.document_loaders import PyPDFLoader
-            from langchain.text_splitter import RecursiveCharacterTextSplitter
-            
-            loader = PyPDFLoader(user_policy_path)
-            documents = loader.load()
-            
-            if documents:
-                splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100)
-                chunks = splitter.split_documents(documents)
-                embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-                db_faiss = FAISS.from_documents(chunks, embeddings)
-                
-        elif scheme_id:
-            vs_path = os.path.join(current_app.config["UPLOAD_FOLDER"], "..", "vectorstore", f"scheme_{scheme_id}")
-            if os.path.exists(vs_path):
-                # RAG available for this scheme
-                embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-                db_faiss = FAISS.load_local(vs_path, embeddings, allow_dangerous_deserialization=True)
-
-        if db_faiss:
-            query_topics = ["income limits and criteria", "document requirements and validity"]
-            clauses = []
-            for topic in query_topics:
-                docs = db_faiss.similarity_search(topic, k=3)
-                clauses.extend([doc.page_content for doc in docs])
-            policy_context = "\n".join(set(clauses))
-
+            # Extract text directly from user-uploaded policy (Memory-efficient alternative to RAG)
+            reader = PdfReader(user_policy_path)
+            text = ""
+            for i, page in enumerate(reader.pages):
+                if i > 50: break # Safety limit
+                text += page.extract_text() + "\n"
+            if text.strip():
+                policy_context = text[:15000] # Limit context window to 15k chars for prompt safety
+        
+        # If we have a specific policy (from user or scheme), use Groq for advanced evaluation
+        if policy_context and policy_context != "No specific policy document provided. Fallback to general rules.":
             issues_str = "\n".join([f"- {i.get('type')}: {i.get('reason')}" for i in doc_issues]) if doc_issues else "None"
             income_str = f"₹{income:,}" if income else "Could not be extracted"
 
@@ -178,10 +160,17 @@ def upload_document():
         return jsonify({"error": "Only PDF files are allowed."}), 400
 
     # Save file
-    filename = secure_filename(f"user_{user_id}_{file.filename}")
     upload_folder = current_app.config["UPLOAD_FOLDER"]
+    if not os.path.exists(upload_folder):
+        os.makedirs(upload_folder, exist_ok=True)
+
+    filename = secure_filename(f"user_{user_id}_{file.filename}")
     pdf_path = os.path.join(upload_folder, filename)
-    file.save(pdf_path)
+    try:
+        file.save(pdf_path)
+    except Exception as e:
+        print(f"File Save Error (Main): {str(e)}")
+        return jsonify({"error": f"Failed to save document: {str(e)}"}), 500
 
     # Save optional policy file
     policy_file = request.files.get("policy_file")
