@@ -22,7 +22,9 @@ def create_app():
     # Extensions
     db.init_app(app)
     JWTManager(app)
-    CORS(app, origins=["http://localhost:5173", "http://localhost:3000"])
+    
+    # Allow local dev and Render frontend origins
+    CORS(app, origins=["http://localhost:5173", "http://localhost:3000", "*"])
 
     # Blueprints
     from routes.auth import auth_bp
