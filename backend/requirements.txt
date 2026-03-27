@@ -7,9 +7,9 @@ groq==0.11.0
 python-dotenv==1.0.1
 werkzeug==3.0.4
 gunicorn==22.0.0
-langchain==0.1.0
-langchain-community==0.0.9
-faiss-cpu==1.7.4
-sentence-transformers==2.2.2
-pypdf==4.0.1
-huggingface-hub==0.20.2
+langchain
+langchain-community
+faiss-cpu
+sentence-transformers
+pypdf
+huggingface-hub
