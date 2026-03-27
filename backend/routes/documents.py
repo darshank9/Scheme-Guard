@@ -11,8 +11,8 @@ if SCHEME_GUARD_PATH not in sys.path:
 from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from werkzeug.utils import secure_filename
-from extensions import db
-from models import Application, Scheme
+from backend.extensions import db
+from backend.models import Application, Scheme
 
 documents_bp = Blueprint("documents", __name__)
 

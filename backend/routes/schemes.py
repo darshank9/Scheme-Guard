@@ -1,8 +1,8 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from extensions import db
+from backend.extensions import db
 import json
-from models import Scheme
+from backend.models import Scheme
 
 schemes_bp = Blueprint("schemes", __name__)
 

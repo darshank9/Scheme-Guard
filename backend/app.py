@@ -4,7 +4,7 @@ load_dotenv()
 from flask import Flask
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
-from extensions import db
+from backend.extensions import db
 import os
 
 
@@ -27,10 +27,10 @@ def create_app():
     CORS(app, origins=["http://localhost:5173", "http://localhost:3000", "*"])
 
     # Blueprints
-    from routes.auth import auth_bp
-    from routes.documents import documents_bp
-    from routes.schemes import schemes_bp
-    from routes.admin import admin_bp
+    from backend.routes.auth import auth_bp
+    from backend.routes.documents import documents_bp
+    from backend.routes.schemes import schemes_bp
+    from backend.routes.admin import admin_bp
 
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
     app.register_blueprint(documents_bp, url_prefix="/api")
@@ -45,11 +45,11 @@ def create_app():
 
 
 def _seed_default_data():
-    from models import Scheme, User
+    from backend.models import Scheme, User
     from werkzeug.security import generate_password_hash
 
     # Seed admin user
-    from models import User
+    from backend.models import User
     admin = User.query.filter_by(username="admin", role="admin").first()
     if not admin:
         admin = User(
