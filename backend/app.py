@@ -15,6 +15,8 @@ def create_app():
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///scheme_guard_v2.db"
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY", "scheme-guard-super-secret-2024")
+    from datetime import timedelta
+    app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=24)
     app.config["UPLOAD_FOLDER"] = os.path.join(os.path.dirname(__file__), "uploads")
 
     os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)

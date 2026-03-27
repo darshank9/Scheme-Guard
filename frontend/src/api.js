@@ -13,10 +13,23 @@ const api = axios.create({
 
 // Attach JWT token automatically
 api.interceptors.request.use(config => {
-    const token = localStorage.getItem('sg_access_token') // Changed from 'sg_token' to 'sg_access_token'
+    const token = localStorage.getItem('sg_access_token')
     if (token) config.headers.Authorization = `Bearer ${token}`
     return config
 })
+
+// Handle 401 Unauthorized
+api.interceptors.response.use(
+    response => response,
+    error => {
+        if (error.response?.status === 401) {
+            localStorage.removeItem('sg_access_token')
+            localStorage.removeItem('sg_user')
+            window.location.href = '/login'
+        }
+        return Promise.reject(error)
+    }
+)
 
 // Auth
 export const registerUser = (data) => api.post('/auth/register', data)
