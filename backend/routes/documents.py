@@ -273,9 +273,24 @@ def submit_appeal(app_id):
 def generate_appeal():
     """Generate appeal letter using Groq LLM."""
     try:
-        from appeal.appeal_generator import generate_appeal as _gen_appeal
-    except Exception:
-        return jsonify({"error": "Appeal generation module not available."}), 500
+        # Try to import from the path we added
+        try:
+            from appeal.appeal_generator import generate_appeal as _gen_appeal
+        except ImportError:
+            # Fallback for different path structures
+            import sys
+            print(f"DEBUG: Current sys.path: {sys.path}")
+            from scheme_guard.appeal.appeal_generator import generate_appeal as _gen_appeal
+            
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"Appeal Generation Import Error: {error_details}")
+        return jsonify({
+            "error": "Appeal generation module failed to load.",
+            "details": str(e),
+            "trace": error_details if current_app.debug else None
+        }), 500
 
     data = request.get_json()
     applicant_name = data.get("applicant_name", "Applicant")
@@ -293,4 +308,11 @@ def generate_appeal():
         )
         return jsonify({"appeal": appeal_text}), 200
     except Exception as e:
-        return jsonify({"error": f"Failed to generate appeal: {str(e)}"}), 500
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"Appeal Generation Execution Error: {error_details}")
+        return jsonify({
+            "error": "Failed to generate appeal letter.",
+            "details": str(e),
+            "trace": error_details if current_app.debug else None
+        }), 500

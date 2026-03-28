@@ -1,6 +1,6 @@
-from app import create_app
-from extensions import db
-from models import Scheme, User
+from backend.app import create_app
+from backend.extensions import db
+from backend.models import Scheme, User
 import os
 
 app = create_app()
