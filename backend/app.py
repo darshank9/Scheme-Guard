@@ -1,4 +1,12 @@
 from dotenv import load_dotenv
+import os
+import sys
+
+# Path healing: Allow running from within 'backend/' or project root
+PARENT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if PARENT_DIR not in sys.path:
+    sys.path.insert(0, PARENT_DIR)
+
 load_dotenv()
 
 from flask import Flask
